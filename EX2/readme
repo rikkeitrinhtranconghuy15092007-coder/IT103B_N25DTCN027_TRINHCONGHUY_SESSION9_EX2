@@ -1,0 +1,29 @@
+# Khắc phục Lỗi Thao tác Đối tượng & Xóa Thuộc tính Hồ sơ Phòng Khách sạn
+
+## 1. Phân tích Lỗi Kỹ Thuật (Bug Analysis)
+
+Chương trình hiện tại chứa 3 lỗi nghiêm trọng khi thao tác với Object:
+
+1. **Lỗi truy cập giá phòng qua biến động (Dot vs Bracket Notation):**
+   - **Mã lỗi:** `bookingReservation.priceKey`
+   - **Nguyên nhân:** Dấu `.` tìm kiếm trực tiếp chữ `"priceKey"` trong đối tượng thay vì giá trị của biến là `"roomPrice"`. Kết quả là `undefined` làm hỏng toàn bộ tính toán sau đó.
+   - **Giải pháp:** Sử dụng `bookingReservation[priceKey]`.
+
+2. **Lỗi xóa thuộc tính ảo (Memory Leak / Ghost Key):**
+   - **Mã lỗi:** `bookingReservation.discountCode = undefined;`
+   - **Nguyên nhân:** Gán bằng `undefined` chỉ làm rỗng giá trị chứ **không xóa** khóa (`key`) đó khỏi cấu trúc đối tượng. Khi dùng vòng lặp `for...in` hoặc `Object.keys()`, key `discountCode` vẫn xuất hiện.
+   - **Giải pháp:** Sử dụng toán tử `delete bookingReservation.discountCode;` để hủy hoàn toàn thuộc tính.
+
+3. **Lỗi in kết quả trong vòng lặp for...in:**
+   - **Mã lỗi:** `bookingReservation.key`
+   - **Nguyên nhân:** Giống lỗi 1, JavaScript sẽ tìm một thuộc tính có tên exacly là `"key"` trong mỗi vòng lặp, dẫn đến việc in ra toàn bộ là `undefined`.
+   - **Giải pháp:** Phải sử dụng `bookingReservation[key]`.
+
+---
+
+## 2. Bảng Test Cases (Kiểm thử)
+
+| Trường hợp kiểm thử | Dữ liệu đầu vào (Input) | Kết quả sai thực tế (Mã cũ) | Kết quả đúng mong đợi (Mã mới) |
+| :--- | :--- | :--- | :--- |
+| **TC01: Xóa mã giảm giá không hợp lệ** | `isVoucherValid = false` | Biểu thức `'discountCode' in bookingReservation` trả về **`true`** (vẫn tồn tại). | Biểu thức `'discountCode' in bookingReservation` trả về **`false`** (đã bị xóa). |
+| **TC02: In chi tiết phiếu đặt phòng qua for...in** | `bookingReservation` (chứa các keys) | Màn hình console in ra:<br>`bookingId: undefined`<br>`guestName: undefined`<br>`...` | Màn hình in đúng
